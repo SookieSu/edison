@@ -7,6 +7,8 @@ import os
 import sys
 
 import HttpUtil
+import FileOperate
+
 reload(sys)
 sys.setdefaultencoding("utf-8")
 path_voice = r"../voice"
@@ -22,7 +24,7 @@ def getMessage(deviceID):
     data = jsonData['data']
     #print(data)
     #test
-    '''
+    
     record = data[-1]
     msgtype = record['msgtype']
     if msgtype == 'voice':
@@ -48,7 +50,7 @@ def getMessage(deviceID):
             deleteSong(record['data'])
         if msgtype == 'story_delete':
             deleteStory(record['data'])
-
+    '''
     
 
 def addVoice(data):
@@ -58,7 +60,7 @@ def addVoice(data):
     retUrl = urlArray[3]
     retData = HttpUtil.doGet(retDomain,'/'+retUrl)
     filename = retUrl
-    writeFile(path_voice,filename,retData)
+    FileOperate.writeFile(path_voice,filename,retData)
     #print(retData)
 
 def addSong(data):
@@ -74,7 +76,7 @@ def addSong(data):
     retUrl = urlArray[3:]
     url = "/".join(retUrl)
     #retData = HttpUtil.doGet(retDomain,'/'+url)
-    #writeFile(path_song,songName,retData)
+    #FileOperate.writeFile(path_song,songName,retData)
 
 def addStory(data):
     if data == "":
@@ -83,14 +85,6 @@ def addStory(data):
     storyName = jsonData['name']
     storyUrl = jsonData['url']
 
-
-def writeFile(path,filename,data):
-    path_this = os.getcwd()
-    os.chdir(path)
-    mediaFile = open(filename,'w')
-    mediaFile.write(data)
-    mediaFile.close()
-    os.chdir(path_this)
 
 
 getMessage('0')
