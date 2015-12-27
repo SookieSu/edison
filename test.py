@@ -5,6 +5,7 @@ import mraa
 import json
 import os
 import sys
+import urllib
 
 import HttpUtil
 import FileOperate
@@ -25,18 +26,18 @@ def getMessage(deviceID):
     #print(data)
     #test
     
-    record = data[-1]
+    record = data[2]
     msgtype = record['msgtype']
     if msgtype == 'voice':
         addVoice(record['data'])
     if msgtype == 'song_add':
-        addSong(record['data'])
+        addSong(record['id'],record['data'])
     if msgtype == 'story_add':
-        addStory(record['data'])
+        addStory(record['id'],record['data'])
     if msgtype == 'song_delete':
-        deleteSong(record['data'])
+        deleteSong(record['id'],record['data'])
     if msgtype == 'story_delete':
-        deleteStory(record['data'])
+        deleteStory(record['id'],record['data'])
     '''
     for record in data:
         msgtype = record['msgtype']
@@ -51,7 +52,19 @@ def getMessage(deviceID):
         if msgtype == 'story_delete':
             deleteStory(record['data'])
     '''
-    
+
+def setMessage(deviceID,data):
+    domain = '2.sookiesu.sinaapp.com'
+    url = '/api/deviceApi.php'
+    body = {
+            "method" : "postData",
+            "deviceID" : "",
+            "data" : ""
+            }
+    body['deviceID'] = deviceID
+    body['data'] = data
+    realbody = urllib.urlencode(body)
+    retData = HttpUtil.doPost(domain,url,realbody)
 
 def addVoice(data):
     urlArray = data.split('/')
@@ -63,10 +76,11 @@ def addVoice(data):
     FileOperate.writeFile(path_voice,filename,retData)
     #print(retData)
 
-def addSong(data):
+def addSong(songID,data):
     if data == "":
         return False
     print(data)
+    filename = 'song-'+songID
     jsonData = json.loads(data)
     songName = jsonData['name']
     songUrl = str(jsonData['url'])
@@ -75,10 +89,15 @@ def addSong(data):
     retDomain = urlArray[2]
     retUrl = urlArray[3:]
     url = "/".join(retUrl)
-    #retData = HttpUtil.doGet(retDomain,'/'+url)
-    #FileOperate.writeFile(path_song,songName,retData)
+    retData = HttpUtil.doGet(retDomain,'/'+url)
+    flag = FileOperate.writeSongName(path_song,songName,songID)
+    if flag == True:
+        FileOperate.writeFile(path_song,filename,retData)
+        return True
+    else:
+        return False
 
-def addStory(data):
+def addStory(storyID,data):
     if data == "":
         return False
     jsonData = json.loads(data)
@@ -87,7 +106,11 @@ def addStory(data):
 
 
 
-getMessage('0')
+#getMessage('0')
+filetest = open('../voice/voice-1450681665.amr','r')
+voicedata = filetest.read()
+#voicedata = "testtesttest"
+setMessage('0',voicedata)
 print (mraa.getVersion())
 print (mraa.getPlatformName())
 print (mraa.getPlatformType())
