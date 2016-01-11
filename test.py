@@ -21,38 +21,41 @@ def getMessage(deviceID):
     domain = '2.sookiesu.sinaapp.com'
     url = '/api/deviceApi.php?method=getData&deviceID='+deviceID
     retData = HttpUtil.doGet(domain,url)
+    print(retData)
+    if retData == None:
+        return False;
     jsonData = json.loads(retData)
     data = jsonData['data']
     #print(data)
     #test
     
-    record = data[2]
-    msgtype = record['msgtype']
-    if msgtype == 'voice':
-        addVoice(record['data'])
-    if msgtype == 'song_add':
-        addSong(record['id'],record['data'])
-    if msgtype == 'story_add':
-        addStory(record['id'],record['data'])
-    if msgtype == 'song_delete':
-        deleteSong(record['id'],record['data'])
-    if msgtype == 'story_delete':
-        deleteStory(record['id'],record['data'])
-    '''
-    for record in data:
+    #record = data[2]
+    for record in data:    
         msgtype = record['msgtype']
+        #msgtype == voice : url
+        #msgtype == song_add or story_add : id , name , url 
+        #msgtype == song_delete or story_delete : id
+        print(record['data'])
+        print(type(record['data']))
+        
         if msgtype == 'voice':
-            addVoice(record['data'])
+            print('add voice\n')
+            #addVoice(record['data'])
         if msgtype == 'song_add':
-            addSong(record['data'])
+            songdata = json.loads(record['data'])
+            songID = songdata['id']
+            songName = songdata['name']
+            songUrl = songdata['url']
+            print(songID,songName,songUrl)
+            addSong(songID,songName,songUrl)
         if msgtype == 'story_add':
-            addStory(record['data'])
+            print('add story\n')
         if msgtype == 'song_delete':
             deleteSong(record['data'])
         if msgtype == 'story_delete':
             deleteStory(record['data'])
-    '''
-
+    
+    
 def setMessage(deviceID,data):
     domain = '2.sookiesu.sinaapp.com'
     url = '/api/deviceApi.php'
@@ -76,26 +79,25 @@ def addVoice(data):
     FileOperate.writeFile(path_voice,filename,retData)
     #print(retData)
 
-def addSong(songID,data):
-    if data == "":
-        return False
-    print(data)
-    filename = 'song-'+songID
-    jsonData = json.loads(data)
-    songName = jsonData['name']
-    songUrl = str(jsonData['url'])
-    print (songUrl)
+def addSong(songID,songName,songUrl):
+    filename = 'song-'+str(songID)
+    songUrl = str(songUrl)
     urlArray = songUrl.split('/')
+    print (urlArray)
     retDomain = urlArray[2]
-    retUrl = urlArray[3:]
-    url = "/".join(retUrl)
-    retData = HttpUtil.doGet(retDomain,'/'+url)
+    retUrlArray = urlArray[3:]
+    retUrl = "/".join(retUrlArray)
+    print(retUrl)
+    retData = HttpUtil.doGet(retDomain,'/'+retUrl)
+    print(retData)
+    '''
     flag = FileOperate.writeSongName(path_song,songName,songID)
     if flag == True:
         FileOperate.writeFile(path_song,filename,retData)
         return True
     else:
         return False
+    '''
 
 def addStory(storyID,data):
     if data == "":
@@ -104,13 +106,18 @@ def addStory(storyID,data):
     storyName = jsonData['name']
     storyUrl = jsonData['url']
 
+def deleteSong(songID):
+    return True
+
+def deleteStory(storyID):
+    return True
 
 
-#getMessage('0')
-filetest = open('../voice/voice-1450681665.amr','r')
-voicedata = filetest.read()
+getMessage('0')
+#filetest = open('../voice/voice-1450681665.amr','r')
+#voicedata = filetest.read()
 #voicedata = "testtesttest"
-setMessage('0',voicedata)
+#setMessage('0',voicedata)
 print (mraa.getVersion())
 print (mraa.getPlatformName())
 print (mraa.getPlatformType())
