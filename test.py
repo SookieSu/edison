@@ -83,21 +83,20 @@ def addSong(songID,songName,songUrl):
     filename = 'song-'+str(songID)
     songUrl = str(songUrl)
     urlArray = songUrl.split('/')
-    print (urlArray)
+    #print (urlArray)
     retDomain = urlArray[2]
     retUrlArray = urlArray[3:]
     retUrl = "/".join(retUrlArray)
     print(retUrl)
     retData = HttpUtil.doGet(retDomain,'/'+retUrl)
-    print(retData)
-    '''
-    flag = FileOperate.writeSongName(path_song,songName,songID)
+    #print(retData)
+    
+    flag = FileOperate.writeFile(path_song,filename,retData)
     if flag == True:
-        FileOperate.writeFile(path_song,filename,retData)
-        return True
+        return FileOperate.writeSongName(path_song,songName,songID)
     else:
         return False
-    '''
+    
 
 def addStory(storyID,data):
     if data == "":
