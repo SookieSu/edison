@@ -32,9 +32,11 @@ def getMessage(deviceID):
     #record = data[2]
     for record in data:    
         msgtype = record['msgtype']
-        #msgtype == voice : url
-        #msgtype == song_add or story_add : id , name , url 
-        #msgtype == song_delete or story_delete : id
+        '''
+        msgtype == voice : url
+        msgtype == song_add or story_add : id , name , url 
+        msgtype == song_delete or story_delete : id
+        '''
         print(record['data'])
         print(type(record['data']))
         
