@@ -4,6 +4,12 @@
 import os
 import json
 
+'''
+write file 
+@param string path
+@param string filename
+@param binary data
+'''
 def writeFile(path,filename,data):
     path_this = os.getcwd()
     os.chdir(path)
@@ -16,7 +22,30 @@ def writeFile(path,filename,data):
         print 'ERROR:',e  #Print exception info (optional)
     finally:
         os.chdir(path_this)
+        return True
 
+'''
+delete file 
+@param string path
+@param string filename
+@return bool
+'''
+def deleteFile(path,filename):
+    try:
+        if os.path.exist(path + '/' + filename):
+            os.remove(path + '/' + filename)
+            return True
+        else:
+            return False
+    except Exception,e:
+        print e
+
+'''
+mark song name after write song file
+@param string path
+@param string songName
+@param int songID
+'''
 def writeSongName(path,songName,songID):
     path_this = os.getcwd()
     os.chdir(path)
@@ -27,21 +56,52 @@ def writeSongName(path,songName,songID):
             songNameDict = {}
             songNameDict[songID] = songName
             json.dump(songNameDict,songNameFile,indent=2)
-            return True
         else:
             songNameDict = json.loads(data)
             print (songNameDict)
+            #use songID to unique a song
             if songID in songNameDict:
-                print ('already in list!')
-                return False
+                print (songID + ' already in list!')
             else:
                 songNameDict[songID] = songName
                 songNameFile.close()
                 songNameFile = open('songName','w')
                 json.dump(songNameDict,songNameFile,indent=2)
-                return True
     except Exception,e:
         print e
     finally:
         os.chdir(path_this)
+        return True
+
+'''
+update file "songName"
+@param string path
+@param string songID
+@return bool
+'''
+def deleteSongName(path,songID):
+    path_this = os.getcwd()
+    os.chdir(path)
+    try:
+        songNameFile = open('songName','r+')
+        data = songNameFile.read()
+        if data == '':
+            print('songName is empty')
+        else:
+            songNameDict = json.loads(data)
+            print (songNameDict)
+            #use songID to unique a song
+            if songID not in songNameDict:
+                print(songID + ' not in list!')
+            else:
+                songName = songNameDict.pop(songID)
+                print('delete song success : ' + songName)
+                songNameFile.close()
+                songNameFile = open('songName','w')
+                json.dump(songNameDict,songNameFile,indent=2)
+    except Exception,e:
+        print e
+    finally:
+        os.chdir(path_this)
+        return True
 
