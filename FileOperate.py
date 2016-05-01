@@ -32,7 +32,7 @@ delete file
 '''
 def deleteFile(path,filename):
     try:
-        if os.path.exist(path + '/' + filename):
+        if os.path.exists(path + '/' + filename):
             os.remove(path + '/' + filename)
             return True
         else:
@@ -89,13 +89,13 @@ def deleteSongName(path,songID):
             print('songName is empty')
         else:
             songNameDict = json.loads(data)
-            print (songNameDict)
+            #print (songNameDict)
             #use songID to unique a song
             if songID not in songNameDict:
                 print(songID + ' not in list!')
             else:
                 songName = songNameDict.pop(songID)
-                print('delete song success : ' + songName)
+                print('delete song success : ' + songID)
                 songNameFile.close()
                 songNameFile = open('songName','w')
                 json.dump(songNameDict,songNameFile,indent=2)
@@ -104,4 +104,29 @@ def deleteSongName(path,songID):
     finally:
         os.chdir(path_this)
         return True
+
+'''
+write log
+@param string path
+@param string data
+@return bool
+'''
+def writeLog(path,data):
+    path_this = os.getcwd()
+    os.chdir(path)
+    filename = 'sookiesu.log'
+    ret = True
+    try:
+        logFile = open(filename,'a+')
+        logFile.write(data)
+        logFile.write('\n')
+        logFile.close()
+    except Exception,e:
+        e = sys.exc_info()[0]  #Get exception info (optional)
+        print 'ERROR:',e  #Print exception info (optional)
+        ret = False
+    finally:
+        os.chdir(path_this)
+        return ret
+
 

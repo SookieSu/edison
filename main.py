@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import urllib
+import time
 
 import HttpUtil
 import FileOperate
@@ -15,6 +16,7 @@ sys.setdefaultencoding("utf-8")
 path_voice = r"../voice"
 path_song = r"../song"
 path_story = r"../story"
+path_log = r"../log"
 
 '''
 get unread voice message,song add/delete message,story add/delete message from server
@@ -25,46 +27,53 @@ def getMessage(deviceID):
     url = '/api/deviceApi.php?method=getData&deviceID='+deviceID
     retData = HttpUtil.doGet(domain,url)
     print(retData)
-    if retData == None:
-        return False;
     jsonData = json.loads(retData)
     data = jsonData['data']
-
+    
     result = {}
     result['errNo'] = 0
     result['errMsg'] = ""
+    result['message'] = retData
 
-    for record in data:    
-        msgtype = record['msgtype']
-        '''
-        msgtype == voice : url
-        msgtype == song_add or story_add : id , name , url 
-        msgtype == song_delete or story_delete : id
-        '''
-        retFlag = True
-        if msgtype == 'voice':
-            print('add voice')
-            #retFlag = addVoice(record['data'])
-        if msgtype == 'song_add':
-            songdata = json.loads(record['data'])
-            songID = songdata['id']
-            songName = songdata['name']
-            songUrl = songdata['url']
-            print(songID,songName,songUrl)
-            #retFlag = addSong(songID,songName,songUrl)
-        if msgtype == 'story_add':
-            print('add story')
-        if msgtype == 'song_delete':
-            print(record)
-            #retFlag = deleteSong(record['data'])
-        if msgtype == 'story_delete':
-            retFlag = deleteStory(record['data'])
-
-        if retFlag == False:
-            result['errNo'] = 101
-            result['errmsg'] = result['errmsg'] + " update failed : " + record['data']
+    if data == None:
+        result['errNo'] = 202
+        result['errMsg'] = 'get new message failed from server !'
     
+    else:
+        for record in data:    
+            msgtype = record['msgtype']
+            '''
+            msgtype == voice : url
+            msgtype == song_add or story_add : id , name , url 
+            msgtype == song_delete or story_delete : id
+            '''
+            retFlag = True
+            if msgtype == 'voice':
+                print('add voice')
+                retFlag = addVoice(record['data'])
+            if msgtype == 'song_add':
+                songdata = json.loads(record['data'])
+                songID = songdata['id']
+                songName = songdata['name']
+                songUrl = songdata['url']
+                print(songID,songName,songUrl)
+                retFlag = addSong(songID,songName,songUrl)
+            if msgtype == 'story_add':
+                print('add story')
+            if msgtype == 'song_delete':
+                retFlag = deleteSong(record['data'])
+            if msgtype == 'story_delete':
+                retFlag = deleteStory(record['data'])
+
+            if retFlag == False:
+                result['errNo'] = 101
+                result['errMsg'] = result['errMsg'] + " update failed : " + msgtype + ':' + record['data']
+    
+    struct_time = time.localtime(time.time())
+    log_time = time.strftime('%Y%m%d%H%M%S',struct_time)
+    result['exectime'] = log_time
     print(json.dumps(result,indent=2))
+    FileOperate.writeLog(path_log,json.dumps(result,indent=2))
 
 '''
 set voice message from device to wechat,post to server
@@ -93,7 +102,7 @@ add a voice message record to device from wechat
 '''
 def addVoice(data):
     urlArray = data.split('/')
-    print (urlArray)
+    
     #get data source domain
     retDomain = urlArray[2]
     #get data source filename
@@ -101,9 +110,8 @@ def addVoice(data):
     #get voice source
     retData = HttpUtil.doGet(retDomain,'/'+retUrl)
     filename = retUrl
-    print(filename)
+    
     retFlag = FileOperate.writeFile(path_voice,filename,retData)
-    print(retFlag)
     return retFlag
 
 '''
@@ -117,13 +125,10 @@ def addSong(songID,songName,songUrl):
     filename = 'song-'+str(songID)
     songUrl = str(songUrl)
     urlArray = songUrl.split('/')
-    #print (urlArray)
     retDomain = urlArray[2]
     retUrlArray = urlArray[3:]
     retUrl = "/".join(retUrlArray)
-    print(retUrl)
     retData = HttpUtil.doGet(retDomain,'/'+retUrl)
-    #print(retData)
     
     flag = FileOperate.writeFile(path_song,filename,retData)
     if flag == True:
@@ -148,7 +153,9 @@ def addStory(storyID,data):
 
 def deleteSong(songID):
     filename = 'song-'+str(songID)
+    print(filename)
     flag = FileOperate.deleteFile(path_song,filename)
+    print('delete file flag : '+ str(flag))
     if flag == True:
         return FileOperate.deleteSongName(path_song,songID)
     else:
