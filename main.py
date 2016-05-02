@@ -1,22 +1,23 @@
 #!/usr/bin/python
 #-*- coding:utf-8 –*-
 
-import mraa
+#import mraa
 import json
 import os
 import sys
 import urllib
 import time
+import pwd
 
 import HttpUtil
 import FileOperate
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
-path_voice = r"../voice"
-path_song = r"../song"
-path_story = r"../story"
-path_log = r"../log"
+path_voice = r"/home/root/sookie/voice"
+path_song = r"/home/root/sookie/song"
+path_story = r"/home/root/sookie/story"
+path_log = r"/home/root/sookie/log"
 
 '''
 get unread voice message,song add/delete message,story add/delete message from server
@@ -25,6 +26,7 @@ get unread voice message,song add/delete message,story add/delete message from s
 def getMessage(deviceID):
     domain = '2.sookiesu.sinaapp.com'
     url = '/api/deviceApi.php?method=getData&deviceID='+deviceID
+    
     retData = HttpUtil.doGet(domain,url)
     print(retData)
     jsonData = json.loads(retData)
@@ -150,7 +152,11 @@ def addStory(storyID,data):
     storyName = jsonData['name']
     storyUrl = jsonData['url']
 
-
+'''
+delete the song in device at ~/sookie/song/ by songID
+@param int songID
+@return bool 
+'''
 def deleteSong(songID):
     filename = 'song-'+str(songID)
     print(filename)
@@ -161,13 +167,89 @@ def deleteSong(songID):
     else:
         return False
 
+'''
+delete the story in device at ~/sookie/story/ by storyID
+@param int storyID
+@return bool 
+'''
 def deleteStory(storyID):
     return True
 
+'''
+sync media info between device and server , server be the host , device be the slave
+@param string deviceID
+@return dict result
+'''
+def syncMediaInfo(deviceID):
+    domain = '2.sookiesu.sinaapp.com'
+    url = '/api/deviceApi.php?method=syncMediaInfo&deviceID='+deviceID
+    
+    retData = HttpUtil.doGet(domain,url)
+    #print(retData)
+    jsonData = json.loads(retData)
+    data = jsonData['data']
+    
+    result = {}
+    result['errNo'] = 0
+    result['errMsg'] = ""
+    result['message'] = "exec syncMediaInfo \n"
 
-getMessage('0')
+    songNameData = FileOperate.readFile(path_song,'songName')
+    songDict = json.loads(songNameData)
+    songIDList_device = songDict.keys()
+    songIDList_server = []
+    
+    #check the song ID list in server , to add new song to device
+    for record in data:
+        songID = record['id']
+        songIDList_server.append(songID)
+        #print(songID)
+        if songID not in songIDList_device:
+            detail = json.loads(record['data'])
+            songName = detail['name']
+            songURL = detail['url']
+            #print(songName,songURL)
+            retFlag = addSong(songID,songName,songURL)
+            if retFlag == True:
+                result['message'] = result['message'] + ' add song ' + songID + ' success! ' + record['data'] + '\n'
+            else:
+                result['errNo'] = 33
+                result['errMsg'] = result['errMsg'] + ' add song ' + songID + ' failed! ' + record['data'] + '\n'
+    
+    for songID in songIDList_device:
+        if songID not in songIDList_server:
+            retFlag = deleteSong(songID)
+            if retFlag == True:
+                result['message'] = result['message'] + ' delete song ' + songID + ' success! ' + songDict[songID]  + '\n'
+            else:
+                result['errNo'] = 33
+                result['errMsg'] = result['errMsg'] + ' delete song ' + songID + ' failed! ' + songDict[songID] + '\n'
+    
 
-#setMessage('0',voicedata)
+    struct_time = time.localtime(time.time())
+    log_time = time.strftime('%Y%m%d%H%M%S',struct_time)
+    result['exectime'] = log_time
+    print(json.dumps(result,indent=2))
+    FileOperate.writeLog(path_log,json.dumps(result,indent=2))
+
+
+
+def main():
+    try:
+        syncMediaInfo('0')
+        getMessage('0')
+        #setMessage('0',os.geteuid())
+        sys.exit(0)
+    except:
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
+
+
+'''
+test for mraa
 print (mraa.getVersion())
 print (mraa.getPlatformName())
 print (mraa.getPinName(30))
@@ -176,3 +258,4 @@ x = mraa.Gpio(20)
 print (x.read())
 #print ("%.5f" % x.readFloat())
 #print (mraa.pinModeTest())
+'''

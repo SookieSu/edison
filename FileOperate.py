@@ -25,6 +25,27 @@ def writeFile(path,filename,data):
         return True
 
 '''
+read file 
+@param string path
+@param string filename
+@return string data
+'''
+def readFile(path,filename):
+    path_this = os.getcwd()
+    os.chdir(path)
+    data = None
+    try: 
+        mediaFile = open(filename,'r')
+        data = mediaFile.read()
+        mediaFile.close()
+    except Exception,e:
+        e = sys.exc_info()[0]  #Get exception info (optional)
+        print 'ERROR:',e  #Print exception info (optional)
+    finally:
+        os.chdir(path_this)
+        return data
+
+'''
 delete file 
 @param string path
 @param string filename
