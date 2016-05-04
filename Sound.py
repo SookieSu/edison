@@ -1,5 +1,11 @@
 #!/usr/bin/python
 
+
+
+
+
+
+'''
 import mraa as m
 import random as rand
 
@@ -15,4 +21,5 @@ for x in range(0,10):
         print("we have an error captain!")
         break
         exit(1)
+'''
 
