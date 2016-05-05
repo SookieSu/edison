@@ -6,6 +6,8 @@ import mraa
 import time
 import sys
 
+import Sound
+
 '''
 define the key pin 
 '''
@@ -30,13 +32,13 @@ def intrHandler(gpio):
   print("pin " + repr(gpio.getPin(True)) + " = " + repr(gpio.read()))
   pinNum = 45
   if pinNum == play_voice:
-    print('play voice')
+    Sound.playRecord()
   elif pinNum == record_voice:
-    print('record voice')
+    Sound.record()
   elif pinNum == play_song:
-    print('play_song')
+    Sound.playSong()
   elif pinNum == play_next_song:
-    print('play_next_song')
+    Sound.playNextSong()
   else:
     print('no suitable pin to handle')
   
@@ -51,19 +53,34 @@ x.dir(mraa.DIR_IN)
 print(str(x.read()))
 
 #input pin to start ISR
+'''
 if (len(sys.argv) == 2):
   try:
     pin = int(sys.argv[1], 10)
   except ValueError:
     printf("Invalid pin " + sys.argv[1])
+'''
 
 #interrupt exec
 try:
-	x = mraa.Gpio(pin)
-	print("Starting ISR for pin " + repr(pin))
-	x.dir(mraa.DIR_IN)
-	x.isr(mraa.EDGE_BOTH, intrHandler, x)
+	pv = mraa.Gpio(play_voice)
+  rv = mraa.Gpio(record_voice)
+  ps = mraa.Gpio(play_song)
+  pns = mraa.Gpio(play_next_song)
+	
+  print("Starting ISR for pin " + repr(play_voice) + ',' + repr(record_voice) + ',' + repr(play_song) + ',' + repr(play_next_song))
+	
+  pv.dir(mraa.DIR_IN)
+  rv.dir(mraa.DIR_IN)
+  ps.dir(mraa.DIR_IN)
+  pns.dir(mraa.DIR_IN)
+
+	pv.isr(mraa.EDGE_BOTH, intrHandler, pv)
+  rv.isr(mraa.EDGE_BOTH, intrHandler, sv)
+  ps.isr(mraa.EDGE_BOTH, intrHandler, ps)
+  pns.isr(mraa.EDGE_BOTH, intrHandler, pns)
+
 	var = raw_input("Press ENTER to stop")
-	x.isrExit()
+	#x.isrExit()
 except ValueError as e:
     print(e)

@@ -1,9 +1,24 @@
 #!/usr/bin/python
 
+import os
+import sys
+import time
 
 
+def playRecord():
+	print('playRecord')
 
+def playSong():
+	print('playSong')
 
+def playNextSong():
+	print('playNextSong')
+
+def record():
+	print('record')
+
+def play():
+	print('play')
 
 '''
 import mraa as m
