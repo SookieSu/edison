@@ -18,6 +18,7 @@ path_voice = r"/home/root/sookie/voice"
 path_song = r"/home/root/sookie/song"
 path_story = r"/home/root/sookie/story"
 path_log = r"/home/root/sookie/log"
+path_record = r"/home/root/sookie/record"
 
 '''
 get unread voice message,song add/delete message,story add/delete message from server
@@ -83,7 +84,7 @@ set voice message from device to wechat,post to server
 @param binary data
 @return retData
 '''
-def setMessage(deviceID,data):
+def setMessage(deviceID,fileName):
     domain = '2.sookiesu.sinaapp.com'
     url = '/api/deviceApi.php'
     body = {
@@ -91,11 +92,28 @@ def setMessage(deviceID,data):
             "deviceID" : "",
             "data" : ""
             }
+    
+    result = {}
+    result['errNo'] = 0
+    result['errMsg'] = ""
+    result['message'] = "upload record to wechat : " + fileName
+
+    data = FileOperate.readFile(path_record,fileName)
+    if data == None:
+        result['errNo'] = 202
+        result['errMsg'] = 'can not read file !'
+    
     body['deviceID'] = deviceID
     body['data'] = data
     realbody = urllib.urlencode(body)
     retData = HttpUtil.doPost(domain,url,realbody)
-    return retData
+    
+    struct_time = time.localtime(time.time())
+    log_time = time.strftime('%Y%m%d%H%M%S',struct_time)
+    result['exectime'] = log_time
+    print(json.dumps(result,indent=2))
+    FileOperate.writeLog(path_log,json.dumps(result,indent=2))
+
 
 '''
 add a voice message record to device from wechat
@@ -236,9 +254,9 @@ def syncMediaInfo(deviceID):
 
 def main():
     try:
-        syncMediaInfo('0')
+        #syncMediaInfo('0')
         getMessage('0')
-        #setMessage('0',os.geteuid())
+        setMessage('0','foobar.amr')
         sys.exit(0)
     except:
         sys.exit(1)
