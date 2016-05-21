@@ -11,6 +11,7 @@ import pwd
 
 import HttpUtil
 import FileOperate
+import Sound
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
@@ -129,10 +130,21 @@ def addVoice(data):
     retUrl = urlArray[3]
     #get voice source
     retData = HttpUtil.doGet(retDomain,'/'+retUrl)
-    filename = retUrl
+    source_filename = retUrl
     
-    retFlag = FileOperate.writeFile(path_voice,filename,retData)
-    return retFlag
+    retFlag = FileOperate.writeFile(path_voice,source_filename,retData)
+    if retFlag == False:
+        return False
+    else:
+        source = source_filename.split('.')
+        target_filename = source[0] + ".mp3"
+        print(target_filename)
+        status = Sound.amrToMp3(path_voice,source_filename,target_filename)
+        if status == 0 :
+            return FileOperate.deleteFile(path_voice,source_filename)
+        else:
+            print('convert amr to mp3 wrong!')
+            return False
 
 '''
 add a song message record to device from wechat

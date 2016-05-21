@@ -3,22 +3,70 @@
 import os
 import sys
 import time
+import subprocess
 
+import FileOperate
+
+path_record = r"/home/root/sookie/record"
 
 def playRecord():
-	print('playRecord')
+    print('playRecord')
 
 def playSong():
-	print('playSong')
+    print('playSong')
 
 def playNextSong():
-	print('playNextSong')
+    print('playNextSong')
 
 def record():
-	print('record')
+    print('record')
+    path = path_record
+    fileName = "record-"+time.time()+".wav"
+    retFlag = recordWav(path,fileName)
+    if retFlag == 0:
+        return fileName
+    else:
+        return None
 
-def play():
-	print('play')
+
+def amrToMp3(path,source,target):
+    path_this = os.getcwd()
+    os.chdir(path)
+    cmd = "/usr/bin/ffmpeg -i " + source + " -ab 64k " + target
+    status = subprocess.Popen(cmd,shell=True)
+    retFlag = status.wait()
+    os.chdir(path_this)
+    return retFlag
+
+def wavToAmr(path,source,target):
+    path_this = os.getcwd()
+    os.chdir(path)
+    cmd = "/usr/bin/ffmpeg -i " + source + " -ab 12.2k -ar 8000 -ac 1 "  + target
+    status = subprocess.Popen(cmd,shell=True)
+    retFlag = status.wait()
+    os.chdir(path_this)
+    return retFlag
+
+def playMp3(path,fileName):
+    path_this = os.getcwd()
+    os.chdir(path)
+    cmd = "mpg123 " + fileName
+    status = subprocess.Popen(cmd,shell=True)
+    retFlag = status.wait()
+    time.sleep(2)
+    os.chdir(path_this)
+    return retFlag
+
+def recordWav(path,fileName):
+    path_this = os.getcwd()
+    os.chdir(path)
+    cmd = "arecord -f cd -t wav " + fileName
+    status = subprocess.Popen(cmd,shell=True)
+    retFlag = status.wait()
+    time.sleep(2)
+    os.chdir(path_this)
+    return retFlag 
+
 
 '''
 import mraa as m
@@ -37,37 +85,4 @@ for x in range(0,10):
         break
         exit(1)
 '''
-
-def amrToMp3(path,source,target):
-    path_this = os.getcwd()
-    os.chdir(path)
-    cmd = "/usr/bin/ffmpeg -i " + source + " -ab 64k " + target
-    subprocess.call(cmd,shell=True)
-    os.chdir(path_this)
-    return True
-
-def wavToAmr(path,source,target):
-    path_this = os.getcwd()
-    os.chdir(path)
-    cmd = "/usr/bin/ffmpeg -i " + source + " -ab 12.2k -ar 8000 -ac 1 "  + target
-    subprocess.call(cmd,shell=True)
-    os.chdir(path_this)
-    return True
-
-def playMp3(path,fileName):
-    path_this = os.getcwd()
-    os.chdir(path)
-    cmd = "mpg123 " + fileName
-    subprocess.call(cmd,shell=True)
-    os.chdir(path_this)
-    return True 
-
-def recordWav(path,fileName):
-    path_this = os.getcwd()
-    os.chdir(path)
-    cmd = "arecord -f cd -t wav " + fileName
-    subprocess.call(cmd,shell=True)
-    os.chdir(path_this)
-    return True 
-
 
