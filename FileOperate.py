@@ -2,7 +2,9 @@
 #coding=utf8
 
 import os
+import subprocess
 import json
+
 
 '''
 write file 
@@ -75,16 +77,25 @@ def writeSongName(path,songName,songID):
         data = songNameFile.read()
         if data == '':
             songNameDict = {}
-            songNameDict[songID] = songName
+            songNameDict['songIDList'] = []
+            songNameDict['songList'] = {}
+            songNameDict['songNum'] = 0
+            songNameDict['currentSong'] = 0
+            
+            songNameDict['songIDList'].append(songID)
+            songNameDict['songList'][songID] = songName
+            songNameDict['songNum'] += 1
             json.dump(songNameDict,songNameFile,indent=2)
         else:
             songNameDict = json.loads(data)
             print (songNameDict)
             #use songID to unique a song
-            if songID in songNameDict:
+            if songID in songNameDict['songList']:
                 print (songID + ' already in list!')
             else:
-                songNameDict[songID] = songName
+                songNameDict['songIDList'].append(songID)
+                songNameDict['songList'][songID] = songName
+                songNameDict['songNum'] += 1
                 songNameFile.close()
                 songNameFile = open('songName','w')
                 json.dump(songNameDict,songNameFile,indent=2)
@@ -110,12 +121,13 @@ def deleteSongName(path,songID):
             print('songName is empty')
         else:
             songNameDict = json.loads(data)
-            #print (songNameDict)
             #use songID to unique a song
-            if songID not in songNameDict:
+            if songID not in songNameDict['songList']:
                 print(songID + ' not in list!')
             else:
-                songName = songNameDict.pop(songID)
+                songNameDict['songIDList'].remove(songID)
+                songName = songNameDict['songList'].pop(songID)
+                songNameDict['songNum'] -= 1
                 print('delete song success : ' + songID)
                 songNameFile.close()
                 songNameFile = open('songName','w')
@@ -125,6 +137,245 @@ def deleteSongName(path,songID):
     finally:
         os.chdir(path_this)
         return True
+
+'''
+mark "voiceList" after save the voice from wechat
+@param string path
+@param string fileName
+@return bool
+'''
+def writeVoiceList(path,fileName):
+    path_this = os.getcwd()
+    os.chdir(path)
+    try:
+        voiceListFile = open('voiceList','r+')
+        data = voiceListFile.read()
+        if data == '':
+        
+            voiceListDict = {}
+            voiceListDict['voiceList'] = []
+            voiceListDict['voiceNum'] = 0
+            voiceListDict['currentVoice'] = 0
+
+            voiceListDict['voiceList'].append(fileName)
+            voiceListDict['voiceNum'] += 1
+            json.dump(voiceListDict,voiceListFile,indent=2)
+        else:
+        
+            voiceListDict = json.loads(data)
+            if fileName in voiceListDict['voiceList']:
+                print(fileName + ' already in list!')
+            else:
+                voiceListDict['voiceList'].append(fileName)
+                voiceListDict['voiceNum'] += 1
+                voiceListFile.close()
+                voiceListFile = open('voiceList','w')
+                json.dump(voiceListDict,voiceListFile,indent=2)
+    except Exception,e:
+        print e
+    finally:
+        os.chdir(path_this)
+        return True
+
+'''
+mark "voiceList" after save the voice from wechat
+@param string path
+@param string fileName
+@return bool
+'''
+def deleteVoiceList(path,fileName):
+    path_this = os.getcwd()
+    os.chdir(path)
+    try:
+        voiceListFile = open('voiceList','r+')
+        data = voiceListFile.read()
+        if data == '':
+            print('voiceList is empty')
+        else:
+            voiceListDict = json.loads(data)
+            if fileName not in voiceListDict['voiceList']:
+                print(fileName + ' not in list!')
+            else:
+                voiceListDict['voiceList'].remove(fileName)
+                voiceListDict['voiceNum'] -= 1
+                print('delete voice success : ' + fileName)
+                voiceListFile.close()
+                voiceListFile = open('voiceList','w')
+                json.dump(voiceListDict,voiceListFile,indent=2)
+    except Exception,e:
+        print e
+    finally:
+        os.chdir(path_this)
+        return True
+
+'''
+get Current songName
+@param string path
+@return fileName
+'''
+def getCurrentSongName(path):
+    path_this = os.getcwd()
+    os.chdir(path)
+    currentSongName = None
+    try:
+        songNameFile = open('songName','r+')
+        data = songNameFile.read()
+        if data == '':
+            print('songName is empty')
+        else:
+            songNameDict = json.loads(data)
+            currentSongSeq = songNameDict['currentSong']
+            currentSongID = songNameDict['songIDList'][currentSongSeq]
+            currentSongName = "song-" + str(currentSongID)
+        songNameFile.close()
+    except Exception,e:
+        print e
+    finally:
+        os.chdir(path_this)
+        return currentSongName
+
+
+'''
+get Next songName
+@param string path
+@return fileName
+'''
+def getNextSongName(path):
+    path_this = os.getcwd()
+    os.chdir(path)
+    currentSongName = None
+    try:
+        songNameFile = open('songName','r+')
+        data = songNameFile.read()
+        if data == '':
+            print('songName is empty')
+        else:
+            songNameDict = json.loads(data)
+            currentSongSeq = songNameDict['currentSong']
+            currentSongID = songNameDict['songIDList'][currentSongSeq]
+            if currentSongSeq == songNameDict['songNum']-1:
+                songNameDict['currentSong'] = 0
+                currentSongID = songNameDict['songIDList'][0]
+                currentSongName = 'song-'+str(currentSongID)
+            else:
+                songNameDict['currentSong'] = currentSongSeq + 1
+                currentSongID = songNameDict['songIDList'][currentSongSeq + 1]
+                currentSongName = 'song-'+str(currentSongID)
+        
+        songNameFile.close()
+        songNameFile = open('songName','w')
+        json.dump(songNameDict,songNameFile,indent=2)
+
+    except Exception,e:
+        print e
+    finally:
+        os.chdir(path_this)
+        return currentSongName
+
+'''
+get Current voice fileName
+@param string path
+@return fileName
+'''
+def getCurrentVoiceName(path):
+    path_this = os.getcwd()
+    os.chdir(path)
+    currentVoiceName = None
+    try:
+        voiceListFile = open('voiceList','r+')
+        data = voiceListFile.read()
+        if data == '':
+            print('voiceList is empty')
+        else:
+            voiceListDict = json.loads(data)
+            currentVoiceSeq = voiceListDict['currentVoice']
+            currentVoiceName = voiceListDict['voiceList'][currentVoiceSeq]
+        voiceListFile.close()
+    except Exception,e:
+        print e
+    finally:
+        os.chdir(path_this)
+        return currentVoiceName
+
+'''
+get Latest voice fileName
+@param string path
+@return fileName
+'''
+def getLatestVoiceName(path):
+    path_this = os.getcwd()
+    os.chdir(path)
+    currentVoiceName = None
+    try:
+        voiceListFile = open('voiceList','r+')
+        data = voiceListFile.read()
+        if data == '':
+            print('voiceList is empty')
+        else:
+            voiceListDict = json.loads(data)
+            currentVoiceSeq = voiceListDict['voiceNum'] - 1
+            currentVoiceName = voiceListDict['voiceList'][currentVoiceSeq]
+        voiceListFile.close()
+    except Exception,e:
+        print e
+    finally:
+        os.chdir(path_this)
+        return currentVoiceName
+
+
+
+'''
+get Next voice fileName
+@param string path
+@return fileName
+'''
+def getNextVoiceName(path):
+    path_this = os.getcwd()
+    os.chdir(path)
+    currentVoiceName = None
+    try:
+        voiceListFile = open('voiceList','r+')
+        data = voiceListFile.read()
+        if data == '':
+            print('voiceList is empty')
+        else:
+            voiceListDict = json.loads(data)
+            currentVoiceSeq = voiceListDict['currentVoice']
+            if currentVoiceSeq == 0:
+                voiceListDict['currentVoice'] = voiceListDict['voiceNum']-1
+                currentVoiceName = voiceListDict['voiceList'][voiceListDict['voiceNum']-1]
+            else:
+                voiceListDict['currentVoice'] = currentVoiceSeq - 1
+                currentVoiceName = voiceListDict['voiceList'][currentVoiceSeq - 1]
+            
+            voiceListFile.close()
+            voiceListFile = open('voiceList','w')
+            json.dump(voiceListDict,voiceListFile,indent=2)
+    except Exception,e:
+        print e
+    finally:
+        os.chdir(path_this)
+        return currentVoiceName
+
+'''
+get Latest record fileName
+@param string path
+@return fileName
+'''
+def getLatestRecordName(path):
+    path_this = os.getcwd()
+    os.chdir(path)
+    currentVoiceName = None
+    try:
+       cmd = "ls -lt | awk '{print $9}' | head -n 1"
+       result = subprocess.check_output(cmd,shell=True)
+       currentVoiceName = result.split('\n')[0]
+    except Exception,e:
+        print e
+    finally:
+        os.chdir(path_this)
+        return currentVoiceName
+
 
 '''
 write log
@@ -149,5 +400,6 @@ def writeLog(path,data):
     finally:
         os.chdir(path_this)
         return ret
+
 
 

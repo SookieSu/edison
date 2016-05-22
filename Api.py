@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#-*- coding:utf-8 –*-
+#-*- coding:utf-8 -*-
 
 #import mraa
 import json
@@ -15,6 +15,8 @@ import Sound
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
+
+
 path_voice = r"/home/root/sookie/voice"
 path_song = r"/home/root/sookie/song"
 path_story = r"/home/root/sookie/story"
@@ -138,10 +140,10 @@ def addVoice(data):
     else:
         source = source_filename.split('.')
         target_filename = source[0] + ".mp3"
-        print(target_filename)
         status = Sound.amrToMp3(path_voice,source_filename,target_filename)
         if status == 0 :
-            return FileOperate.deleteFile(path_voice,source_filename)
+            FileOperate.deleteFile(path_voice,source_filename)
+            return FileOperate.writeVoiceList(path_voice,target_filename)
         else:
             print('convert amr to mp3 wrong!')
             return False
@@ -163,6 +165,7 @@ def addSong(songID,songName,songUrl):
     retData = HttpUtil.doGet(retDomain,'/'+retUrl)
     
     flag = FileOperate.writeFile(path_song,filename,retData)
+    
     if flag == True:
         return FileOperate.writeSongName(path_song,songName,songID)
     else:
@@ -198,14 +201,6 @@ def deleteSong(songID):
         return False
 
 '''
-delete the story in device at ~/sookie/story/ by storyID
-@param int storyID
-@return bool 
-'''
-def deleteStory(storyID):
-    return True
-
-'''
 sync media info between device and server , server be the host , device be the slave
 @param string deviceID
 @return dict result
@@ -222,38 +217,40 @@ def syncMediaInfo(deviceID):
     result = {}
     result['errNo'] = 0
     result['errMsg'] = ""
-    result['message'] = "exec syncMediaInfo \n"
-
+    result['message'] = "exec syncMediaInfo "
+    
     songNameData = FileOperate.readFile(path_song,'songName')
-    songDict = json.loads(songNameData)
-    songIDList_device = songDict.keys()
+    if songNameData != '':
+        songDict = json.loads(songNameData)
+        songIDList_device = songDict['songList'].keys()
+    else:
+        songIDList_device = []
+    
     songIDList_server = []
     
     #check the song ID list in server , to add new song to device
     for record in data:
         songID = record['id']
         songIDList_server.append(songID)
-        #print(songID)
         if songID not in songIDList_device:
             detail = json.loads(record['data'])
             songName = detail['name']
             songURL = detail['url']
-            #print(songName,songURL)
             retFlag = addSong(songID,songName,songURL)
             if retFlag == True:
-                result['message'] = result['message'] + ' add song ' + songID + ' success! ' + record['data'] + '\n'
+                result['message'] = result['message'] + ' add song ' + songID + ' success! ' + record['data'] + '  '
             else:
                 result['errNo'] = 33
-                result['errMsg'] = result['errMsg'] + ' add song ' + songID + ' failed! ' + record['data'] + '\n'
+                result['errMsg'] = result['errMsg'] + ' add song ' + songID + ' failed! ' + record['data'] + '  '
     
     for songID in songIDList_device:
         if songID not in songIDList_server:
             retFlag = deleteSong(songID)
             if retFlag == True:
-                result['message'] = result['message'] + ' delete song ' + songID + ' success! ' + songDict[songID]  + '\n'
+                result['message'] = result['message'] + ' delete song ' + songID + ' success! ' + songDict['songList'][songID]  + '  '
             else:
                 result['errNo'] = 33
-                result['errMsg'] = result['errMsg'] + ' delete song ' + songID + ' failed! ' + songDict[songID] + '\n'
+                result['errMsg'] = result['errMsg'] + ' delete song ' + songID + ' failed! ' + songDict['songList'][songID] + '  '
     
 
     struct_time = time.localtime(time.time())
@@ -264,18 +261,7 @@ def syncMediaInfo(deviceID):
 
 
 
-def main():
-    try:
-        #syncMediaInfo('0')
-        getMessage('0')
-        setMessage('0','foobar.amr')
-        sys.exit(0)
-    except:
-        sys.exit(1)
 
-
-if __name__ == '__main__':
-    main()
 
 
 '''
